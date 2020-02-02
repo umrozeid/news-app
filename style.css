@@ -19,3 +19,23 @@ h1,h2,h3,h4,h5,h6{
 .pointer {
     cursor: pointer;
 }
+.like{
+    color: #AFABAA;
+}
+.unlike{
+    color: #006600;
+}
+.keyword-delete{
+    color: #AFABAA;
+}
+.details-page-icons{
+    font-size: 30px;
+}
+
+@media only screen and (min-width: 768px) {
+    .left-fixed-part {
+        /*I used sticky instead of fixed because for the latter I will need to give the elements their parent width using js each time resize the window*/
+        position: sticky;
+        top: 1.5rem;
+    }
+}

@@ -17,11 +17,12 @@ class News {
 //This class handles the process of getting  news from using the API, liking them and adding the tags
 class Model {
 
-    NEWS__PREFIX = "news-";
+    NEWS_PREFIX = "news-";
+    CATEGORY_PREFIX="category-";
     storage = localStorage;
-    keywords = [] ;
+    BASE_URL='https://newsapi.org/v2/top-headlines?apiKey=ac02c2ebd080434a9e7b38863c747a6e&language=en';
 
-     getNews(url){
+    getNews(url){
 
         let model=this;
         return new Promise(resolve => {
@@ -34,7 +35,7 @@ class Model {
             }).then(function () {
                 for (let i = 0; i < model.storage.length; i++) {
                     let key = model.storage.key(i);
-                    if (key.indexOf(model.NEWS__PREFIX) > -1) {
+                    if (key.indexOf(model.NEWS_PREFIX) > -1) {
                         let title = JSON.parse(model.storage.getItem(key)).title;
                         for (let i = 0; i < newsArray.length; i++) {
                             if (newsArray[i].title === title)
@@ -47,87 +48,117 @@ class Model {
         });
     }
 
-    getTopHeadLines() {
-
-        let url = 'https://newsapi.org/v2/top-headlines?' +
-            'country=us&' +
-            'apiKey=ac02c2ebd080434a9e7b38863c747a6e';
-
-        return this.getNews(url);
-    }
-
-    getNewsBasedOnKeywords() {
-
-        if (this.keywords.length === 0)
-            return this.getTopHeadLines();
-        return new Promise( async resolve => {
+    async getNewsBasedOnKeywords() {
+        let keywords = await this.getKeywords();
+        if (keywords.length === 0)
+            return this.getNews(this.BASE_URL);
+        return new Promise(async resolve => {
             let newsArray = [];
             let url;
             let tempArray;
-            for (let i = 0; i < this.keywords.length; i++) {
-                url = 'https://newsapi.org/v2/top-headlines?q=';
-                url += this.keywords[i];
-                url += '&apiKey=ac02c2ebd080434a9e7b38863c747a6e';
+            for (let i = 0; i < keywords.length; i++) {
+                url = this.BASE_URL + '&q=' + encodeURIComponent(keywords[i]);
                 tempArray = await this.getNews(url);
                 for (let i = 0; i < tempArray.length; i++)
                     for (let j = 0; j < newsArray.length; j++)
                         if (tempArray[i].title === newsArray[j].title)
-                            tempArray.splice(i,1);
+                            tempArray.splice(i, 1);
                 newsArray.push(...tempArray);
             }
 
-             newsArray = newsArray.sort(function compare(newsA, newsB) {
-                    if (newsA.publishedAt > newsB.publishedAt) return -1;
-                    if (newsB.publishedAt > newsA.publishedAt) return 1;
-                    return 0;
-                });
-                resolve(newsArray);
+            newsArray = newsArray.sort(function compare(newsA, newsB) {
+                if (newsA.publishedAt > newsB.publishedAt) return -1;
+                if (newsB.publishedAt > newsA.publishedAt) return 1;
+                return 0;
+            });
+            resolve(newsArray);
         });
     }
 
     addKeyword(keyword) {
-        this.keywords.push(keyword);
+         let categoryID = this.CATEGORY_PREFIX + keyword;
+         this.storage.setItem(categoryID,keyword);
     }
 
     deleteKeyword(keyword) {
-        this.keywords.splice(this.keywords.indexOf(keyword),1);
+        let categoryID = this.CATEGORY_PREFIX + keyword;
+        this.storage.removeItem(categoryID);
     }
 
     getKeywords(){
-        return this.keywords;
+         let model = this;
+         return new Promise(resolve => {
+             let keywords=[];
+             for (let i = 0; i < model.storage.length; i++) {
+                 let key = model.storage.key(i);
+                 if (key.indexOf(model.CATEGORY_PREFIX) > -1) {
+                     keywords.push(model.storage.getItem(key));
+                 }
+             }
+             resolve(keywords);
+         });
     }
 
     likeNews(news) {
-        let newsID=this.NEWS__PREFIX + news.publishedAt + news.title;
+        let newsID=this.NEWS_PREFIX + news.publishedAt + news.title;
         this.storage.setItem(newsID,JSON.stringify(news));
     }
 
     unlikeNews(news) {
-        let newsID=this.NEWS__PREFIX + news.publishedAt + news.title;
+        let newsID=this.NEWS_PREFIX + news.publishedAt + news.title;
         this.storage.removeItem(newsID);
     }
+
+    setScrollPosition(){
+        this.storage.setItem("newsScrollPosition",$(document).scrollTop());
+    }
+
+    getScrollPosition(){
+         let scrollTop = this.storage.newsScrollPosition;
+         if (scrollTop !== null)
+             return scrollTop;
+         else
+             return 0;
+     }
 
 }
 
 //The View
 
+class Page{
+
+    constructor(elementID) {
+        this.elementID = elementID;
+    }
+
+    showPage() {
+        $(this.elementID).removeClass("d-none");
+    }
+
+    hidePage() {
+        $(this.elementID).addClass("d-none");
+    }
+}
 //This class takes care of rendering news
 class NewsView{
 
-    constructor(viewDetailsClick, likeNewsClick, unlikeNewsClick) {
+    constructor(viewDetailsClick, likeNewsClick, unlikeNewsClick, goBackClick) {
         this.viewDetailsClick = viewDetailsClick;
         this.likeNewsClick = likeNewsClick;
-        this.unlikeNewsClick=unlikeNewsClick;
+        this.unlikeNewsClick = unlikeNewsClick;
+        this.goBackClick = goBackClick;
     }
 
     //This method renders single news tile
     renderNewsTile(news) {
 
         let $element = $("#news-tile-template").clone().contents();
-        // $(".tile-image").attr("src",news.urlToImage);
         $(".tile-title", $element).text(news.title);
         $(".tile-text", $element).text(news.description);
-        $(".tile-publishing-time", $element).text(this.timeSincePublishing(news.publishedAt));
+        $(".tile-publishing-time", $element).text(moment(news.publishedAt).fromNow());
+        setInterval(function (){
+            $(".tile-publishing-time", $element).text(moment(news.publishedAt).fromNow());
+        },1000);
         $(".tile-source", $element).text(news.sourceName);
         $(".tile-image", $element).attr("src",news.urlToImage);
         if (news.isLiked) {
@@ -159,11 +190,13 @@ class NewsView{
     }
 
     //This method takes care of showing the details of a specific news
-    showNewsDetails(news){
+    updateNewsDetails(news) {
+        $(document).scrollTop(0);
         $("#details-title").text(news.title);
         $("#details-image").attr("src",news.urlToImage);
+        $("#details-image-lightbox").attr("href",news.urlToImage);
         $("#details-content").text(news.content);
-        $("#details-publishing-time").text(this.formatPublishingTime(news.publishedAt));
+        $("#details-publishing-time").text(moment(news.publishedAt).format("DD MMMM YYYY"));
         let $unlike = $("#details-container .unlike");
         let $like = $("#details-container .like");
 
@@ -187,42 +220,16 @@ class NewsView{
             $unlike.addClass("d-none");
         }
         $("#go-back-button").on("click",function () {
-            $("#details-container").addClass("d-none");
-            $("#main-container").removeClass("d-none");
-        });
-        $("#main-container").addClass("d-none");
-        $("#details-container").removeClass("d-none");
-    }
-
-    //Shows time since specific instance as 11h or 5m
-    timeSincePublishing(newsPublishedAt) {
-        const MILLISECONDS_IN_MINUTE = 60 * 1000;
-        const MILLISECONDS_IN_HOUR = 60 * MILLISECONDS_IN_MINUTE;
-        const MILLISECONDS_IN_DAY = 24 * MILLISECONDS_IN_HOUR;
-        const MILLISECONDS_IN_MONTH = 30 * MILLISECONDS_IN_DAY;
-        const MILLISECONDS_IN_YEAR = 365 * MILLISECONDS_IN_MONTH;
-        let publishingDate = new Date(newsPublishedAt);
-        let currentDate = new Date();
-        let timeDiff = currentDate.getTime()-publishingDate.getTime();
-        if (timeDiff < MILLISECONDS_IN_MINUTE)
-            return "now";
-        else if (timeDiff < MILLISECONDS_IN_HOUR)
-            return Math.round(timeDiff/MILLISECONDS_IN_MINUTE) + "m";
-        else if (timeDiff < MILLISECONDS_IN_DAY)
-            return Math.round(timeDiff/MILLISECONDS_IN_HOUR) + "h";
-        else if (timeDiff < MILLISECONDS_IN_MONTH)
-            return Math.round(timeDiff/MILLISECONDS_IN_DAY) + "d";
-        else if (timeDiff < MILLISECONDS_IN_YEAR)
-            return Math.round(timeDiff/MILLISECONDS_IN_MONTH) + " months";
-        else
-            return Math.round(timeDiff/MILLISECONDS_IN_YEAR) + " years";
-    }
-
-    //Shows date in a format as 25 January 2020
-    formatPublishingTime(newsPublishedAt){
-        const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        let publishingDate = new Date(newsPublishedAt);
-        return publishingDate.getDate() + " " + MONTHS [publishingDate.getMonth()] + " " + publishingDate.getFullYear();
+            this.goBackClick();
+            // $("#details-container").addClass("d-none");
+            // $("#main-container").removeClass("d-none");
+            //Unbinding event handlers from elements in details page
+            $("#go-back-button").off();
+            $like.off();
+            $unlike.off();
+        }.bind(this));
+        // $("#main-container").addClass("d-none");
+        // $("#details-container").removeClass("d-none");
     }
 }
 
@@ -233,7 +240,7 @@ class KeyWordView {
         this.deleteKeywordClick=deleteKeywordClick;
     }
 
-    renderKeyword(keyword){
+    renderKeyword(keyword) {
         let $element = $("#keyword-template").clone().contents();
         $(".keyword-text", $element).text(keyword);
         $(".keyword-delete", $element).on("click",function () {
@@ -242,7 +249,7 @@ class KeyWordView {
         return $element;
     }
 
-    renderKeywordsList(keywordsArray){
+    renderKeywordsList(keywordsArray) {
         let $container = $("#keywords-container");
         $container.html("");
         for (let i = 0; i < keywordsArray.length; i++){
@@ -254,22 +261,68 @@ class KeyWordView {
 
 //The Controller
 
-class Controller{
-    constructor() {
-        this.model = new Model();
-        this.newsView = new NewsView(this.viewDetails.bind(this), this.likeNews.bind(this), this.unlikeNews.bind(this));
-        this.keywordView = new KeyWordView(this.deleteKeyword.bind(this));
+class Router{
+
+    constructor(controller) {
+        this.controller = controller;
+        this.mainPage = new Page("#main-container");
+        this.detailsPage = new Page("#details-container");
+        let router = this;
+        this.routes = {
+            '/' : router.showMainPage.bind(router)
+            ,'/details': router.showDetailsPage.bind(router)
+        };
+        this.attachURLListener();
     }
 
-    loadNews() {
-        let controller = this;
-        controller.model.getNewsBasedOnKeywords().then( response => {
-            controller.newsView.renderNewsList(response);
+    router() {
+        // Getting the part after the # if there is none we assign / to url  get to main
+        let url = location.hash.slice(1).toLowerCase() || '/';
+        if (this.routes[url] !== undefined)
+            this.routes[url] ();
+    }
+
+    attachURLListener(){
+        $(window).on("hashchange", () => {
+            this.router();
+        });
+        $(window).on("load", () => {
+            this.router();
         });
     }
 
-    loadKeywords() {
-        let keywords = this.model.getKeywords();
+    showMainPage(){
+        this.mainPage.showPage();
+        this.detailsPage.hidePage();
+        $(document).scrollTop(this.controller.model.getScrollPosition());
+        this.controller.attachScrollPositionSaveToWindow();
+    }
+
+    showDetailsPage(){
+        this.detailsPage.showPage();
+        this.mainPage.hidePage();
+    }
+}
+
+class Controller{
+    constructor() {
+        this.model = new Model();
+        this.newsView = new NewsView(this.viewDetails.bind(this), this.likeNews.bind(this), this.unlikeNews.bind(this), this.goBack.bind(this));
+        this.keywordView = new KeyWordView(this.deleteKeyword.bind(this));
+        this.Router = new Router(this);
+        this.setMomentLibrarySettings();
+    }
+
+    async loadNews() {
+        this.attachScrollPositionSaveToWindow();
+        let news = await this.model.getNewsBasedOnKeywords();
+        let keywords = await this.model.getKeywords();
+        this.newsView.renderNewsList(news);
+        this.keywordView.renderKeywordsList(keywords);
+    }
+
+    async loadKeywords() {
+        let keywords = await this.model.getKeywords();
         this.keywordView.renderKeywordsList(keywords);
     }
 
@@ -284,7 +337,13 @@ class Controller{
     }
 
     viewDetails(news) {
-        this.newsView.showNewsDetails(news);
+        $(window).off("scroll");
+        this.newsView.updateNewsDetails(news);
+        window.location.hash = "#/details";
+    }
+
+    initializeDetails() {
+        this.newsView.updateNewsDetails(new News("Press Go Back Button to Get to Main Page","","",new Date(),"","",false));
     }
 
     deleteKeyword(keyword) {
@@ -299,6 +358,39 @@ class Controller{
         this.loadNews();
     }
 
+    attachScrollPositionSaveToWindow(){
+        $(window).on("scroll",function () {
+            this.model.setScrollPosition();
+        }.bind(this));
+    }
+
+    goBack(){
+        window.location.hash = "#";
+        this.attachScrollPositionSaveToWindow();
+        $(document).scrollTop(this.model.getScrollPosition());
+    }
+
+    setMomentLibrarySettings(){
+        //Updating moment js format for relative time
+        moment.updateLocale('en', {
+            relativeTime : {
+                future: "in %s",
+                past:   "%s",
+                s  : '1s',
+                ss : '%ds',
+                m:  "1m",
+                mm: "%dm",
+                h:  "1h",
+                hh: "%dh",
+                d:  "1d",
+                dd: "%dd",
+                M:  "1m",
+                MM: "%dmo",
+                y:  "1y",
+                yy: "%d y"
+            }
+        });
+    }
 }
 
 $(document).ready(function () {
@@ -313,5 +405,17 @@ $(document).ready(function () {
         }
     });
 
+    /*
+    //Code to set fixed div width as parent width if I used position:fixed instead of sticky
+    let width = $(".left-fixed-part").parent().width();
+    $(".left-fixed-part").width(width);
+
+    $(window).on("resize", function () {
+        let width = $(".left-fixed-part").parent().width();
+        $(".left-fixed-part").width(width);
+    });
+    */
+
     controller.loadNews();
+    controller.initializeDetails();
 });
