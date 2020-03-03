@@ -1,0 +1,29 @@
+<div class="container-lg">
+  <div class="row mt-2">
+    <div class="col-12">
+     <!-- <div class="pointer" id="go-back-button" (click)="goToHome()">
+        <i class="fas fa-arrow-left align-middle details-page-icons"></i>
+        <p class="d-inline align-middle font-weight-bold">&ensp;Go Back</p>
+      </div>-->
+      <h1 class="mt-2">{{  news.title }}</h1>
+      <div class="row align-items-center">
+        <div class="col-10 ">
+          <i class="far fa-clock d-inline"></i>
+          <p class="d-inline text-dark">{{ news.publishedAt | date: ' dd MMMM yyyy' }}</p>
+        </div>
+        <div class="col-2 text-right pointer">
+          <i *ngIf="!news.isLiked" class="far fa-heart like details-page-icons" (click)="likeNews()"></i>
+          <i *ngIf="news.isLiked" class="fas fa-heart unlike details-page-icons" (click)="unlikeNews()"></i>
+        </div>
+      </div>
+      <hr>
+<!--      <a href="" id="details-image-lightbox" data-fancybox >-->
+<!--        <img class="img-fluid w-100 pointer" id="details-image" src="">-->
+<!--      </a>-->
+      <a href="" data-fancybox>
+        <img class="img-fluid w-100 pointer" [src]="news.urlToImage">
+      </a>
+      <p class="mx-md-5 mx-2 mt-2">{{ news.content }}</p>
+    </div>
+  </div>
+</div>

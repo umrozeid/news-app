@@ -1,0 +1,20 @@
+<div class="container-lg " id="main-container">
+  <div class="row">
+    <div class="col-12 col-md-4 pt-4">
+      <app-search-and-keywords></app-search-and-keywords>
+    </div>
+    <div class="col-12 col-md-8 pt-3">
+      <div class="row align-items-center" *ngIf="!fetchError">
+        <div class="col-12 col-md-6 mb-3" *ngFor="let news of newsArr; let i = index">
+          <app-news-tile [news]="news" [index]="i"></app-news-tile>
+        </div>
+      </div>
+      <div *ngIf="fetchError">
+        <h2>Loading Error</h2>
+        <p>Reload Page or Try Again Later</p>
+        <div class="btn btn-primary" (click)="reloadPage()">Reload Page</div>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,10 @@
+.keyword-box{
+  height: 40px;
+  margin-bottom: 7px;
+  margin-right: 10px;
+  border: 1px solid #EDE9E7;
+  padding: 5px 10px 5px 10px;
+}
+.keyword-delete{
+  color: #AFABAA;
+}

@@ -1,0 +1,17 @@
+<div class="click-to-show-details pointer" (click)="showDetails()">
+  <img class="img-fluid tile-image w-100" [src]="news.urlToImage">
+  <h3 class="tile-title">{{ news.title }}</h3>
+  <p class="tile-text text-justify text-dark">{{ news.description }}</p>
+</div>
+<div class="row">
+  <div class="col-10">
+    <i class="far fa-clock d-inline"></i>
+    <p class="tile-publishing-time d-inline text-dark">{{ timeFromNow }}</p>
+    <p class="d-inline text-dark">|</p>
+    <p class="tile-source d-inline font-weight-bold">{{ news.sourceName }}</p>
+  </div>
+  <div class="col-2 text-right pointer">
+    <i *ngIf="!news.isLiked" class="far fa-heart like" (click)="likeNews()"></i>
+    <i *ngIf="news.isLiked" class="fas fa-heart unlike" (click)="unlikeNews()"></i>
+  </div>
+</div>

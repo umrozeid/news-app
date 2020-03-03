@@ -1,0 +1,7 @@
+@media only screen and (min-width: 768px) {
+  .left-fixed-part {
+    /*I used sticky instead of fixed because for the latter I will need to give the elements their parent width using js each time resize the window*/
+    position: sticky;
+    top: 1.5rem;
+  }
+}

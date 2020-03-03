@@ -1,0 +1,7 @@
+<div class="left-fixed-part">
+  <h2 class="mb-4">News</h2>
+  <app-news-search></app-news-search>
+  <div class="d-flex flex-wrap ml-1">
+    <app-keywords *ngFor="let keyword of keywords" [keyword]="keyword"></app-keywords>
+  </div>
+</div>
