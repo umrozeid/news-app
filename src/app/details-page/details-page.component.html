@@ -1,10 +1,6 @@
 <div class="container-lg">
   <div class="row mt-2">
     <div class="col-12">
-     <!-- <div class="pointer" id="go-back-button" (click)="goToHome()">
-        <i class="fas fa-arrow-left align-middle details-page-icons"></i>
-        <p class="d-inline align-middle font-weight-bold">&ensp;Go Back</p>
-      </div>-->
       <h1 class="mt-2">{{  news.title }}</h1>
       <div class="row align-items-center">
         <div class="col-10 ">
@@ -17,9 +13,6 @@
         </div>
       </div>
       <hr>
-<!--      <a href="" id="details-image-lightbox" data-fancybox >-->
-<!--        <img class="img-fluid w-100 pointer" id="details-image" src="">-->
-<!--      </a>-->
       <a href="" data-fancybox>
         <img class="img-fluid w-100 pointer" [src]="news.urlToImage">
       </a>

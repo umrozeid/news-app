@@ -5,7 +5,7 @@
     </div>
     <div class="col-12 col-md-8 pt-3">
       <div class="row align-items-center" *ngIf="!fetchError">
-        <div class="col-12 col-md-6 mb-3" *ngFor="let news of newsArr; let i = index">
+        <div class="col-12 col-md-6 mb-3" *ngFor="let news of newsFetchService.newsObservable() | async; let i = index">
           <app-news-tile [news]="news" [index]="i"></app-news-tile>
         </div>
       </div>

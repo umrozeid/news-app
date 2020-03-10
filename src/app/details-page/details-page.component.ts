@@ -10,33 +10,34 @@ import {NewsLikeService} from '../news-like.service';
   styleUrls: ['./details-page.component.css']
 })
 export class DetailsPageComponent implements OnInit {
-  news: News = new News('', '', '', new Date().toISOString(), '', '', false);
-  // news: News = null;
+   news: News = new News('', '', '', new Date().toISOString(), '', '', false);
+   // news: News = null;
+  newsArr: News[] = [];
   constructor(private router: Router,
               private route: ActivatedRoute,
               private newsFetchService: NewsFetchService,
               private newsLikeService: NewsLikeService) { }
 
   ngOnInit(): void {
+    this.newsFetchService.newsObservable().subscribe((newsArray: News[]) => {
+      this.newsArr = newsArray;
+    });
     let id = +this.route.snapshot.params['id'];
-    if (this.newsFetchService.newsArr.length > id) {
-      this.news = this.newsFetchService.newsArr[id];
+    if (this.newsArr.length > id) {
+      this.news = this.newsArr[id];
     } else {
       this.router.navigate(['not-found']);
     }
     this.route.params
       .subscribe((params: Params) => {
         id = +params['id'];
-        if (this.newsFetchService.newsArr.length > id) {
-          this.news = this.newsFetchService.newsArr[id];
+        if (this.newsArr.length > id) {
+          this.news = this.newsArr[id];
         } else {
           this.router.navigate(['not-found']);
         }
       });
   }
-  /*goToHome() {
-    this.router.navigate(['']);
-  }*/
   likeNews() {
     this.newsLikeService.likeNews(this.news);
   }

@@ -2,7 +2,7 @@ import {Injectable, OnDestroy} from '@angular/core';
 import {News} from './news.model';
 import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {catchError, map} from 'rxjs/operators';
-import {forkJoin, Observable, Subject, Subscription, throwError} from 'rxjs';
+import {BehaviorSubject, forkJoin, Observable, ReplaySubject, Subject, Subscription, throwError} from 'rxjs';
 import {KeywordsService} from './keywords.service';
 import {NewsLikeService} from './news-like.service';
 
@@ -12,19 +12,20 @@ import {NewsLikeService} from './news-like.service';
 export class NewsFetchService implements OnDestroy {
   private BASE_URL = 'https://newsapi.org/v2/top-headlines?apiKey=ac02c2ebd080434a9e7b38863c747a6e&language=en';
   private keywordsSubscription: Subscription;
+  private likedNewsSubscription: Subscription;
   private keywordsArr: string[] = [];
   private likedNews: News[] = [];
-  newsArr: News[] = [];
-  private errorSubject: Subject<HttpErrorResponse> = new Subject();
-  fetchErrorObservable: Observable<HttpErrorResponse> = this.errorSubject.asObservable();
+  private newsArr: News[] = [];
+  private errorSubject: Subject<HttpErrorResponse> = new Subject<HttpErrorResponse>();
+  private newsSubject: ReplaySubject<News[]> = new ReplaySubject<News[]>(1);
   constructor(private http: HttpClient, private keywordsService: KeywordsService, private newsLikeService: NewsLikeService) {
-    this.keywordsArr = this.keywordsService.keywordsArr;
-    this.likedNews = newsLikeService.likedNews;
-    this.updateNewsArray();
-    this.keywordsService.keywordsUpdated.subscribe(data => {
+    this.newsSubject.next([]);
+    this.keywordsSubscription = this.keywordsService.keywordsObservable().subscribe((keywordsArr: string[]) => {
+      this.keywordsArr = keywordsArr;
       this.updateNewsArray();
     });
-    this.newsLikeService.likedNewsUpdated.subscribe(() => {
+    this.likedNewsSubscription = this.newsLikeService.likedNewsObservable().subscribe((likedNews: News[]) => {
+      this.likedNews = likedNews;
       for (const news of this.newsArr) {
         news.isLiked = false;
       }
@@ -35,7 +36,15 @@ export class NewsFetchService implements OnDestroy {
           }
         }
       }
+      this.newsSubject.next(this.newsArr);
     });
+    this.updateNewsArray();
+  }
+  public newsObservable(): Observable<News[]> {
+    return this.newsSubject.asObservable();
+  }
+  public  newsFetchErrorObservable(): Observable<HttpErrorResponse> {
+    return this.errorSubject.asObservable();
   }
   private fetchNews(url: string): Observable<any> {
     return this.http.get(url)
@@ -89,13 +98,12 @@ export class NewsFetchService implements OnDestroy {
   }
   private updateNewsArray() {
     this.getNewsBasedOnKeywords().subscribe((responseArr: News[]) => {
-      this.newsArr.length = 0;
-      for (const item of responseArr) {
-        this.newsArr.push(item);
-      }
+      this.newsArr = responseArr;
+      this.newsSubject.next(responseArr);
     });
   }
   ngOnDestroy(): void {
     this.keywordsSubscription.unsubscribe();
+    this.likedNewsSubscription.unsubscribe();
   }
 }

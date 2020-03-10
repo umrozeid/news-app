@@ -12,12 +12,10 @@ import {Router} from '@angular/router';
   styleUrls: ['./main-page.component.css']
 })
 export class MainPageComponent implements OnInit {
-  newsArr: News[];
   fetchError = false;
-  constructor(private newsFetchService: NewsFetchService, private router: Router) { }
+  constructor(public newsFetchService: NewsFetchService, private router: Router) { }
   ngOnInit(): void {
-    this.newsArr = this.newsFetchService.newsArr;
-    this.newsFetchService.fetchErrorObservable
+    this.newsFetchService.newsFetchErrorObservable()
       .subscribe((err: HttpErrorResponse) => {
         this.fetchError = true;
       });

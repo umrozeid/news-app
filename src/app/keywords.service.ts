@@ -1,4 +1,5 @@
-import {EventEmitter, Injectable} from '@angular/core';
+import { Injectable} from '@angular/core';
+import {BehaviorSubject, Observable} from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -6,8 +7,7 @@ import {EventEmitter, Injectable} from '@angular/core';
 export class KeywordsService {
   private CATEGORY_PREFIX = 'category-';
   private storage = localStorage;
-  keywordsArr: string[] = [];
-  keywordsUpdated = new EventEmitter();
+  private keywordsSubject: BehaviorSubject<string []> = new BehaviorSubject<string[]>([]);
   constructor() {
     this.getKeywords();
   }
@@ -24,13 +24,16 @@ export class KeywordsService {
   }
 
   private getKeywords() {
-    this.keywordsArr.length = 0;
+    const keywordsArr = [];
     for (let i = 0; i < this.storage.length; i++) {
       const key = this.storage.key(i);
       if (key.indexOf(this.CATEGORY_PREFIX) > -1) {
-        this.keywordsArr.push(this.storage.getItem(key));
+        keywordsArr.push(this.storage.getItem(key));
       }
     }
-    this.keywordsUpdated.emit(null);
+    this.keywordsSubject.next(keywordsArr);
+  }
+  public keywordsObservable(): Observable<string[]> {
+    return this.keywordsSubject.asObservable();
   }
 }

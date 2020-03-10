@@ -1,5 +1,6 @@
-import {EventEmitter, Injectable} from '@angular/core';
+import {Injectable} from '@angular/core';
 import {News} from './news.model';
+import {BehaviorSubject, Observable} from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -7,8 +8,7 @@ import {News} from './news.model';
 export class NewsLikeService {
   private NEWS_PREFIX = 'news-';
   private storage = localStorage;
-  likedNews: News[] = [];
-  likedNewsUpdated = new EventEmitter();
+  private likedSubject: BehaviorSubject<News[]> = new BehaviorSubject<News[]>([]);
   constructor() {
     this.getLikedNews();
   }
@@ -23,13 +23,16 @@ export class NewsLikeService {
     this.getLikedNews();
   }
   private getLikedNews() {
-    this.likedNews.length = 0;
-    for (let i = 0; i < this.storage.length; i++) {
+   const likedNews = [];
+   for (let i = 0; i < this.storage.length; i++) {
       const key = this.storage.key(i);
       if (key.indexOf(this.NEWS_PREFIX) > -1) {
-        this.likedNews.push(JSON.parse(this.storage.getItem(key)));
+        likedNews.push(JSON.parse(this.storage.getItem(key)));
       }
     }
-    this.likedNewsUpdated.emit(null);
+   this.likedSubject.next(likedNews);
+  }
+  public likedNewsObservable(): Observable<News[]> {
+    return  this.likedSubject.asObservable();
   }
 }

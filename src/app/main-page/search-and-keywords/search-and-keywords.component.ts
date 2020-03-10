@@ -7,11 +7,9 @@ import {KeywordsService} from '../../keywords.service';
   styleUrls: ['./search-and-keywords.component.css']
 })
 export class SearchAndKeywordsComponent implements OnInit {
-  keywords: string[] = [];
-  constructor(private keywordsService: KeywordsService) { }
+  constructor(public keywordsService: KeywordsService) { }
 
   ngOnInit(): void {
-    this.keywords = this.keywordsService.keywordsArr;
   }
 
 }
