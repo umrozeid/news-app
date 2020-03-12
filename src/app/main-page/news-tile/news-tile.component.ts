@@ -1,8 +1,8 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {News} from '../../news.model';
 import * as moment from 'moment';
-import {NewsLikeService} from '../../news-like.service';
 import {Router} from '@angular/router';
+import {NewsFetchService} from '../../news-fetch.service';
 
 @Component({
   selector: 'app-news-tile',
@@ -13,7 +13,7 @@ export class NewsTileComponent implements OnInit {
   @Input() news: News = null;
   @Input() index: number;
   timeFromNow;
-  constructor(private newsLikeService: NewsLikeService, private router: Router) { }
+  constructor(private newsFetchService: NewsFetchService, private router: Router) { }
 
   ngOnInit(): void {
     this.setMomentLibrarySettings();
@@ -44,10 +44,10 @@ export class NewsTileComponent implements OnInit {
     });
   }
   likeNews() {
-    this.newsLikeService.likeNews(this.news);
+    this.newsFetchService.likeNews(this.news);
   }
   unlikeNews() {
-    this.newsLikeService.unlikeNews(this.news);
+    this.newsFetchService.unlikeNews(this.news);
   }
   showDetails() {
     this.router.navigate(['news', this.index]);

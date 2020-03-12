@@ -1,8 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {NewsFetchService} from '../news-fetch.service';
-import {KeywordsService} from '../keywords.service';
-import {Observable, Subscription} from 'rxjs';
-import {News} from '../news.model';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Router} from '@angular/router';
 

@@ -2,7 +2,6 @@ import {Component, OnInit} from '@angular/core';
 import {News} from '../news.model';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 import {NewsFetchService} from '../news-fetch.service';
-import {NewsLikeService} from '../news-like.service';
 
 @Component({
   selector: 'app-details-page',
@@ -15,8 +14,7 @@ export class DetailsPageComponent implements OnInit {
   newsArr: News[] = [];
   constructor(private router: Router,
               private route: ActivatedRoute,
-              private newsFetchService: NewsFetchService,
-              private newsLikeService: NewsLikeService) { }
+              private newsFetchService: NewsFetchService) { }
 
   ngOnInit(): void {
     this.newsFetchService.newsObservable().subscribe((newsArray: News[]) => {
@@ -39,9 +37,9 @@ export class DetailsPageComponent implements OnInit {
       });
   }
   likeNews() {
-    this.newsLikeService.likeNews(this.news);
+    this.newsFetchService.likeNews(this.news);
   }
   unlikeNews() {
-    this.newsLikeService.unlikeNews(this.news);
+    this.newsFetchService.unlikeNews(this.news);
   }
 }
